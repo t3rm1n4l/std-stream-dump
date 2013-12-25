@@ -22,11 +22,9 @@ char *workdir(const char *prog) {
 }
 
 char *join(const char *base, const char *next) {
-    size_t len;
     char buf[1024];
 
-    len = sprintf(buf, "%s/%s", base, next);
-    buf[len] = '\0';
+    sprintf(buf, "%s/%s", base, next);
     return strdup(buf);
 }
 
@@ -39,13 +37,25 @@ int main(int argc, char *argv[]) {
     int in, out;
     pid_t pid;
     int ret;
+    char *buf;
     int pipe_stdin[2], pipe_stdout[2];
     int stdin_fd, stdout_fd;
     char *prog, *wdir, *stdinlog, *stdoutlog;
+    char *binpathenv, *pathenv;
+
+    binpathenv = getenv("BIN_PATH");
+    if (binpathenv) {
+        pathenv = getenv("PATH");
+        if (pathenv) {
+            buf = calloc(strlen(binpathenv) + strlen(pathenv) + 2, 1);
+            sprintf(buf, "%s:%s", binpathenv, pathenv);
+            setenv("PATH", buf, 1);
+        }
+    }
 
     prog = basename(argv[0]);
     wdir = workdir(prog);
-    if (mkdir(wdir, 744) < 0) {
+    if (mkdir(wdir, 0755) < 0) {
         perror("Failed creating directory");
         exit(1);
     }
