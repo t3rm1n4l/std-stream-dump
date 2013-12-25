@@ -7,6 +7,7 @@
 #include <time.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
 
 #define BASE_DIR "/tmp"
 
@@ -117,6 +118,9 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    waitpid(-1, &ret, 0);
     close(stdin_fd);
     close(stdout_fd);
+
+    exit(WEXITSTATUS(ret));
 }
