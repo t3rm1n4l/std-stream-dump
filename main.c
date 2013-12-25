@@ -39,9 +39,9 @@ int main(int argc, char *argv[]) {
     pid_t pid;
     int ret;
     char *buf;
-    int pipe_stdin[2], pipe_stdout[2];
-    int stdin_fd, stdout_fd;
-    char *prog, *wdir, *stdinlog, *stdoutlog;
+    int pipe_stdin[2], pipe_stdout[2], pipe_stderr[2];
+    int stdin_fd, stdout_fd, stderr_fd;
+    char *prog, *wdir, *stdinlog, *stdoutlog,  *stderrlog;
     char *binpathenv, *pathenv;
 
     binpathenv = getenv("BIN_PATH");
@@ -63,19 +63,27 @@ int main(int argc, char *argv[]) {
 
     stdinlog = join(wdir, "stdin.data");
     stdoutlog = join(wdir, "stdout.data");
+    stderrlog = join(wdir, "stderr.data");
 
     pipe(pipe_stdin);
     pipe(pipe_stdout);
+    pipe(pipe_stderr);
 
     stdin_fd = open(stdinlog, O_WRONLY | O_CREAT, 0644);
     if (stdin_fd < 0) {
-        perror("Input cap file");
+        perror("Stdin cap file");
         exit(1);
     }
 
     stdout_fd = open(stdoutlog, O_WRONLY | O_CREAT, 0644);
     if (stdout_fd < 0) {
-        perror("Output cap file");
+        perror("Stdout cap file");
+        exit(1);
+    }
+
+    stderr_fd = open(stderrlog, O_WRONLY | O_CREAT, 0644);
+    if (stderr_fd < 0) {
+        perror("Stderr cap file");
         exit(1);
     }
 
@@ -84,21 +92,28 @@ int main(int argc, char *argv[]) {
     if (pid == 0) {
         close(0);
         close(1);
+        close(2);
+
         dup(pipe_stdin[0]);
         dup(pipe_stdout[1]);
+        dup(pipe_stderr[1]);
         close(pipe_stdin[0]);
         close(pipe_stdout[1]);
+        close(pipe_stderr[1]);
 
         close(pipe_stdin[1]);
         close(pipe_stdout[0]);
+        close(pipe_stderr[0]);
         if (execvp(prog, argv) < 0) {
             perror("Execution failed");
         }
     } else {
         close(pipe_stdin[0]);
         close(pipe_stdout[1]);
+        close(pipe_stderr[1]);
         set_nonblock(0);
         set_nonblock(pipe_stdout[0]);
+        set_nonblock(pipe_stderr[0]);
         while (1) {
             ret = read(0, &in, 1);
             if (ret == 1) {
@@ -110,6 +125,12 @@ int main(int argc, char *argv[]) {
             if (ret == 1) {
                 write(1, &out, 1);
                 write(stdout_fd, &out, 1);
+            }
+
+            ret = read(pipe_stderr[0], &out, 1);
+            if (ret == 1) {
+                write(2, &out, 1);
+                write(stderr_fd, &out, 1);
             }
 
             if (!ret) {
