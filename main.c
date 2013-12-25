@@ -3,9 +3,32 @@
 #include <fcntl.h>
 #include <stdlib.h>
 #include <libgen.h>
+#include <inttypes.h>
+#include <time.h>
+#include <string.h>
+#include <sys/stat.h>
 
-#define CAP_IN "/tmp/input.data"
-#define CAP_OUT "/tmp/output.data"
+#define BASE_DIR "/tmp"
+
+char *workdir(const char *prog) {
+    size_t len;
+    char buf[1024];
+    char *out;
+    uint64_t rand = time(NULL);
+
+    len = sprintf(buf, "%s/%s.%"PRIu64, BASE_DIR, prog, rand);
+    buf[len] = '\0';
+    return strdup(buf);
+}
+
+char *join(const char *base, const char *next) {
+    size_t len;
+    char buf[1024];
+
+    len = sprintf(buf, "%s/%s", base, next);
+    buf[len] = '\0';
+    return strdup(buf);
+}
 
 void set_nonblock(int fd) {
     int flags = fcntl(fd, F_GETFL, 0);
@@ -18,18 +41,31 @@ int main(int argc, char *argv[]) {
     int ret;
     int pipe_stdin[2], pipe_stdout[2];
     int stdin_fd, stdout_fd;
+    char *prog, *wdir, *stdinlog, *stdoutlog;
+
+    prog = basename(argv[0]);
+    wdir = workdir(prog);
+    if (mkdir(wdir, 744) < 0) {
+        perror("Failed creating directory");
+        exit(1);
+    }
+
+    stdinlog = join(wdir, "stdin.data");
+    stdoutlog = join(wdir, "stdout.data");
 
     pipe(pipe_stdin);
     pipe(pipe_stdout);
 
-    stdin_fd = open(CAP_IN, O_WRONLY | O_CREAT, 0644);
+    stdin_fd = open(stdinlog, O_WRONLY | O_CREAT, 0644);
     if (stdin_fd < 0) {
         perror("Input cap file");
+        exit(1);
     }
 
-    stdout_fd = open(CAP_OUT, O_WRONLY | O_CREAT, 0644);
+    stdout_fd = open(stdoutlog, O_WRONLY | O_CREAT, 0644);
     if (stdout_fd < 0) {
         perror("Output cap file");
+        exit(1);
     }
 
     pid = fork();
@@ -44,7 +80,7 @@ int main(int argc, char *argv[]) {
 
         close(pipe_stdin[1]);
         close(pipe_stdout[0]);
-        if (execvp(basename(argv[0]), argv) < 0) {
+        if (execvp(prog, argv) < 0) {
             perror("Execution failed");
         }
     } else {
