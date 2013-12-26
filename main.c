@@ -38,10 +38,11 @@ int main(int argc, char *argv[]) {
     int in, out;
     pid_t pid;
     int ret;
+    int i;
     char *buf;
     int pipe_stdin[2], pipe_stdout[2], pipe_stderr[2];
-    int stdin_fd, stdout_fd, stderr_fd;
-    char *prog, *wdir, *stdinlog, *stdoutlog,  *stderrlog;
+    int stdin_fd, stdout_fd, stderr_fd, args_fd;
+    char *prog, *wdir, *stdinlog, *stdoutlog,  *stderrlog, *argslog;
     char *binpathenv, *pathenv;
 
     binpathenv = getenv("BIN_PATH");
@@ -64,6 +65,15 @@ int main(int argc, char *argv[]) {
     stdinlog = join(wdir, "stdin.data");
     stdoutlog = join(wdir, "stdout.data");
     stderrlog = join(wdir, "stderr.data");
+    argslog = join(wdir, "args.data");
+
+    args_fd = open(argslog, O_WRONLY | O_CREAT, 0644);
+    for (i=1; i<argc; i++) {
+        write(args_fd, argv[i], strlen(argv[i]));
+        write(args_fd, "\n", 1);
+    }
+
+    close(args_fd);
 
     pipe(pipe_stdin);
     pipe(pipe_stdout);
