@@ -1,7 +1,7 @@
-std-stream-capture
+std-stream-dump
 ==================
 
-A standalone tool for capturing stdin and stdout streams
+A standalone tool for capturing stdin, stdout, stderr and arguments
 
 ### Usage
     $ make
@@ -14,7 +14,7 @@ A standalone tool for capturing stdin and stdout streams
     # View captured data files
     $ ls /tmp/target_binary_name*
 
-Copy std-stream-capture's binary `out` to the target binary location. Copy
+Copy std-stream-dump's binary `out` to the target binary location. Copy
 actual target binary to a auxilary location and set environment variable
 BIN_PATH to auxilary directory location. Execute the proxy binary program.
 You can find the data dump for stdin, stdout, stderr and arguments at
