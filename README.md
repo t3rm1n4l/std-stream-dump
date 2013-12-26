@@ -1,12 +1,21 @@
-stdinout-cap
-============
+std-stream-capture
+==================
 
 A standalone tool for capturing stdin and stdout streams
 
 ### Usage
+    $ make
+    $ cp out /usr/local/bin/target_binary_name
 
-Run make
-Copy `stdcap` file with same name as the executable for which you want to
-capture stdin and stdout stream. export PATH with location where actual
-executable is located. Once execution is complete, you can find steams dumped
-into files /tmp/input.data and /tmp/output.data.
+    # Execute for capture
+    $ export BIN_PATH=/home/slynux/target_binaries
+    $ echo stdin_text | /usr/local/bin/target_binary_name
+
+    # View captured data files
+    $ ls /tmp/target_binary_name*
+
+Copy std-stream-capture's binary `out` to the target binary location. Copy
+actual target binary to a auxilary location and set environment variable
+BIN_PATH to auxilary directory location. Execute the proxy binary program.
+You can find the data dump for stdin, stdout, stderr and arguments at
+a location /tmp/program_name.random directory.
