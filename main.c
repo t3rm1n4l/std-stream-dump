@@ -38,6 +38,7 @@ int main(int argc, char *argv[]) {
     int in, out;
     pid_t pid;
     int ret;
+    int result;
     int i;
     char *buf;
     int pipe_stdin[2], pipe_stdout[2], pipe_stderr[2];
@@ -124,7 +125,9 @@ int main(int argc, char *argv[]) {
         set_nonblock(0);
         set_nonblock(pipe_stdout[0]);
         set_nonblock(pipe_stderr[0]);
+
         while (1) {
+            result = 0;
             ret = read(0, &in, 1);
             if (ret == 1) {
                 write(pipe_stdin[1], &in, 1);
@@ -132,26 +135,27 @@ int main(int argc, char *argv[]) {
             }
 
             ret = read(pipe_stdout[0], &out, 1);
+            result |= ret;
             if (ret == 1) {
                 write(1, &out, 1);
                 write(stdout_fd, &out, 1);
             }
 
             ret = read(pipe_stderr[0], &out, 1);
+            result |= ret;
             if (ret == 1) {
                 write(2, &out, 1);
                 write(stderr_fd, &out, 1);
             }
 
-            if (!ret) {
+            if (!result) {
                 break;
             }
         }
+        waitpid(-1, &ret, 0);
+        close(stdin_fd);
+        close(stdout_fd);
+
+        exit(WEXITSTATUS(ret));
     }
-
-    waitpid(-1, &ret, 0);
-    close(stdin_fd);
-    close(stdout_fd);
-
-    exit(WEXITSTATUS(ret));
 }
