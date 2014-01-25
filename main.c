@@ -17,7 +17,7 @@ char *workdir(const char *prog) {
     char *out;
     uint64_t rand = time(NULL);
 
-    len = sprintf(buf, "%s/%s.%"PRIu64, BASE_DIR, prog, rand);
+    len = sprintf(buf, "%s/%s.%d.%"PRIu64, BASE_DIR, prog, getpid(), rand);
     buf[len] = '\0';
     return strdup(buf);
 }
